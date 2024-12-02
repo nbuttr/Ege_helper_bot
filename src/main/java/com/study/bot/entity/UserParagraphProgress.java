@@ -5,19 +5,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.UUID;
 
-@Entity
-@Table(name = "\"image_to_paragraph\"")
 @Getter
 @Setter
-public class ImageToParagraph {
+@Entity
+@Table(name = "\"user_paragraph_progress\"")
+public class UserParagraphProgress {
 
     @Id
     @GeneratedValue
@@ -25,12 +24,16 @@ public class ImageToParagraph {
     private UUID id;
 
     @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne
     @JoinColumn(name = "paragraph_id", nullable = false)
     private Paragraph paragraph;
 
-    @OneToOne    @JoinColumn(name = "image_id")
-    private Image image;
+    @Column(name = "test_score", nullable = false)
+    private int testScore;
 
-    @Column(name = "ordinal_number")
-    private int ordinalNumber;
+    @Column(name = "max_test_score", nullable = false)
+    private int maxTestScore;
 }

@@ -8,6 +8,8 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -47,14 +49,8 @@ public class User {
     @Column(name = "user_last_name")
     private String userLastName;
 
-    @Column(name = "journal_id")
-    private UUID journalId;
-
-
-    @PrePersist
-    protected void onCreate() {
-        this.journalId = UUID.fromString("d9dc1ca2-8978-417b-841f-ca845f25b314");
-    }
-
+    @ManyToOne
+    @JoinColumn(name = "journal_id")
+    private Journal journal;
 
 }

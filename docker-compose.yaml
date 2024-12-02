@@ -5,7 +5,7 @@ volumes:
     name: use-bot-postgresql
 
 services:
-  finance-bot-postgresql:
+  use-bot-postgresql:
     container_name: use-bot-postgresql
     image: postgres:16-alpine
     restart: unless-stopped

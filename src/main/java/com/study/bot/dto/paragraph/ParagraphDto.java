@@ -1,6 +1,7 @@
 package com.study.bot.dto.paragraph;
 
 import com.study.bot.dto.ImageToParagraphDto.ImageToParagraphDto;
+import com.study.bot.entity.Section;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -20,4 +21,6 @@ public class ParagraphDto {
     private int maxTestMark;
 
     private int currTestMark;
+
+    private Section section;
 }

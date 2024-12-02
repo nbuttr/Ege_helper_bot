@@ -3,7 +3,6 @@ package com.study.bot.mapper;
 import com.study.bot.dto.paragraph.CreateParagraphDto;
 import com.study.bot.dto.paragraph.ParagraphDto;
 import com.study.bot.entity.Paragraph;
-import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;

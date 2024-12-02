@@ -4,6 +4,7 @@ import com.study.bot.dto.ImageToParagraphDto.ImageToParagraphDto;
 import com.study.bot.dto.paragraph.CreateParagraphDto;
 import com.study.bot.dto.paragraph.ParagraphDto;
 import com.study.bot.entity.Paragraph;
+import com.study.bot.entity.Section;
 import com.study.bot.mapper.ParagraphMapper;
 import com.study.bot.repository.ParagraphRepository;
 import com.study.bot.service.ParagraphService;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -24,6 +26,7 @@ public class ParagraphServiceImpl implements ParagraphService {
     private final ParagraphRepository repository;
 
     private final ParagraphMapper mapper;
+
 
     @Override
     @Transactional
@@ -76,5 +79,27 @@ public class ParagraphServiceImpl implements ParagraphService {
     @Override
     public List<ImageToParagraphDto> getImageToParagraphDtos(UUID paragraphId) {
         return getById(paragraphId).getImageToParagraphs();
+    }
+
+    @Override
+    public List<Paragraph> toParagraph(List<ParagraphDto> paragraphDtos) {
+        return paragraphDtos.stream().map(mapper::toEntity).collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Paragraph> findParagraph(UUID paragraphId) {
+        return repository.findById(paragraphId);
+    }
+
+    @Override
+    public List<ParagraphDto> findAllBySectionId(Section section) {
+        return repository.findAllBySection(section)
+                .stream().map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Paragraph getEntityById(UUID paragraphId) {
+        return repository.findById(paragraphId).orElseThrow();
     }
 }

@@ -3,6 +3,8 @@ package com.study.bot.service;
 import com.study.bot.dto.ImageToParagraphDto.ImageToParagraphDto;
 import com.study.bot.dto.paragraph.CreateParagraphDto;
 import com.study.bot.dto.paragraph.ParagraphDto;
+import com.study.bot.entity.Paragraph;
+import com.study.bot.entity.Section;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,5 +25,13 @@ public interface ParagraphService {
     ParagraphDto getById(UUID paragraphId);
 
     List<ImageToParagraphDto> getImageToParagraphDtos(UUID paragraphId);
+
+    List<Paragraph> toParagraph(List<ParagraphDto> paragraphDtos);
+
+    Optional<Paragraph> findParagraph(UUID paragraphId);
+
+    List<ParagraphDto> findAllBySectionId(Section section);
+
+    Paragraph getEntityById(UUID paragraphId);
 
 }
