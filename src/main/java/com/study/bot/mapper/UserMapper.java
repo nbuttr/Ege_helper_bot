@@ -16,6 +16,8 @@ import org.mapstruct.ReportingPolicy;
 public interface UserMapper extends EntityMapper<User, UserDto, CreateUserDto> {
 
     @Override
+    @Mapping(source = "userFirstName", target = "firstName")
+    @Mapping(source = "userLastName", target = "lastName")
     UserDto toDto(User entity);
 
     @Override

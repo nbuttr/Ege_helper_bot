@@ -11,6 +11,7 @@ import com.study.bot.dto.user.CreateUserDto;
 import com.study.bot.dto.user.UserDto;
 import com.study.bot.dto.userParagraphProgress.CreateUserParagraphProgressDto;
 import com.study.bot.dto.userParagraphProgress.UserParagraphProgressDto;
+import com.study.bot.entity.Paragraph;
 import com.study.bot.entity.UserParagraphProgress;
 import com.study.bot.entity.type.ImageTypes;
 import com.study.bot.service.ParagraphService;
@@ -44,6 +45,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
@@ -53,6 +55,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.HashMap;
@@ -241,12 +244,13 @@ public class StudyBot extends TelegramLongPollingBot {
                 }
             }
             case GET_PARAGRAPH -> {
-                if (update.hasCallbackQuery()) {
+                if (update.hasCallbackQuery() && update.getCallbackQuery().getData().startsWith("paragraph_")) {
                     userState.setStage(UserStage.VIEW_IMAGES);
                     userState.setCurrentParagraphId(UUID.fromString(handleParagraphCallback(update)));
                     response.setText("Если вы готовы перейти к тестам, введите 'тест' ");
                 } else {
-                    response.setText("Параграф не найден. Попробуйте снова.");
+                    userState.setStage(UserStage.NONE);
+                    response.setText("Отправьте любой текст для продолжения");
                 }
             }
             case START_TEST -> {
@@ -255,17 +259,20 @@ public class StudyBot extends TelegramLongPollingBot {
                     response.setText("В данном параграфе нет тестов. Выберите другой параграф.");
                     userState.setStage(UserStage.SELECT_PARAGRAPH);
                 } else {
+                    Collections.shuffle(tests);
+                    int halfSize = (int) Math.ceil(tests.size() / 2.0);
+                    List<TestDto> selectedTests = tests.subList(0, halfSize);
                     userState.setCurrIndex(0);
-                    userState.setTests(tests);
+                    userState.setTests(selectedTests);
                     userState.setUserParagraphProgressDto(userProgressService
                             .create(new CreateUserParagraphProgressDto(
                                     userService.findEntityByChatId(chatId),
                                     paragraphService.getEntityById(userState.getCurrentParagraphId()),
                                     0,
-                                    tests.size())));
+                                    selectedTests.size())));
                     response.setText("Второй вопрос:");
-                    sendPhoto(chatId, tests.get(userState.getCurrIndex()).getImageUrl());
-                    sendTestQuestion(chatId, tests.get(0));
+                    sendPhoto(chatId, selectedTests.get(userState.getCurrIndex()).getImageUrl());
+                    sendTestQuestion(chatId, selectedTests.get(0));
                     userState.setStage(UserStage.ANSWER_TEST);
                 }
             }
@@ -353,6 +360,8 @@ public class StudyBot extends TelegramLongPollingBot {
                     imageToParagraphDtos.clear();
                     paragraphs.clear();
                 }
+
+
                 if (text.equals("Создать параграф")){
                     adminState.setStage(AdminStage.GET_ALL_SECTIONS);
                     response.setText("Выберите главу, для которой хотите создать параграф:");
@@ -365,9 +374,13 @@ public class StudyBot extends TelegramLongPollingBot {
                 }else if (text.equals("Создать тест")){
                     adminState.setStage(AdminStage.ASK_TEST_IMAGE_URL);
                     response.setText("Отправьте изображение с заданием");
+                }else if(text.equals("Получить доступ к журналу")){
+                    adminState.setStage(AdminStage.GET_STUDENTS_PROGRESS);
+                    response.setText("Вы хотите получить доступ к журналу?");
                 }else {
                     adminState.setStage(AdminStage.NONE);
-                    response.setText("Выберите действие: \n1. Создать главу \n2. Создать параграф \n3. Добавить изображения в параграф");
+                    SendStartAdminMenu(chatId);
+                    response.setText("\n1. Создать главу \n2. Создать параграф \n3. Добавить изображения в параграф \n4. Создать тест \n5. Получить доступ к журналу");
                 }
             }
             case CREATE_PARAGRAPH -> {
@@ -483,7 +496,7 @@ public class StudyBot extends TelegramLongPollingBot {
                         adminState.setStage(AdminStage.ASK_TEST_IMAGE_URL);
                     }else {
                         adminState.setTestUrl(testUrl);
-                        response.setText("Введите вариант ответа №1:");
+                        response.setText("Введите вариант ответа 1:");
                         adminState.setStage(AdminStage.ASK_TEST_ANSWER1);
                     }
                 }
@@ -519,6 +532,16 @@ public class StudyBot extends TelegramLongPollingBot {
                         paragraphService.getEntityById(adminState.getCurrentParagraphId())));
                 response.setText("Тест успешно создан!");
                 adminState.setStage(AdminStage.ASK_TEST_IMAGE_URL);
+            }
+            case GET_STUDENTS_PROGRESS -> {
+                if(text.equalsIgnoreCase("да")){
+                    sendUserProgress(chatId);
+                    adminState.setStage(AdminStage.NONE);
+                    response.setText("Отправьте любой текст для возврата в меню");
+                }else{
+                    adminState.setStage(AdminStage.NONE);
+                    response.setText("Для возврата в меню отправьте любой текст");
+                }
             }
             default -> response.setText("Выберите действие.");
         }
@@ -571,9 +594,37 @@ public class StudyBot extends TelegramLongPollingBot {
             button.setCallbackData("paragraph_" + paragraph.getId());
             rows.add(List.of(button));
         }
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText("Перейти к списку глав");
+        button.setCallbackData("Переход к списку глав");
+        rows.add(List.of(button));
 
         keyboard.setKeyboard(rows);
         sendMessageWithKeyBoard(chatId, "Выберите параграф:", keyboard);
+    }
+
+    private void SendStartAdminMenu(Long chatId){
+        ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
+        keyboard.setResizeKeyboard(true);
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add("Создать главу");
+
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add("Создать параграф");
+
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add("Добавить изображение в параграф");
+
+        KeyboardRow row4 = new KeyboardRow();
+        row4.add("Создать тест");
+
+        KeyboardRow row5 = new KeyboardRow();
+        row5.add("Получить доступ к журналу");
+
+        keyboard.setKeyboard(List.of(row1, row2, row3, row4, row5));
+
+        sendMessageWithReplyKeyBoard(chatId, keyboard);
     }
 
     public void sendSectionList(Long chatId) {
@@ -598,14 +649,31 @@ public class StudyBot extends TelegramLongPollingBot {
         sendMessageWithKeyBoard(chatId, "Выберите главу:", keyboard);
     }
 
+    private void sendUserProgress(Long chatId) {
+        List<UserParagraphProgressDto> progressDtos = userProgressService.findAll();
+
+        if (progressDtos.isEmpty()) {
+            sendMessage(chatId, "Никто не начал обучение.");
+        }
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Прогресс учеников: \n");
+        for(UserParagraphProgressDto progressDto : progressDtos){
+            UserDto userDto = userService.getById(progressDto.getUser().getId());
+            ParagraphDto paragraphDto = paragraphService.getById(progressDto.getParagraph().getId());
+            stringBuilder.append(userDto.getFirstName()).append(" ").append(userDto.getLastName()).append(", ");
+            stringBuilder.append(paragraphDto.getParagraphName()).append(", ");
+            stringBuilder.append(progressDto.getTestScore()).append("/").append(progressDto.getMaxTestScore()).append(" баллов \n");
+        }
+        sendMessage(chatId, stringBuilder.toString());
+    }
+
     public String handleSectionCallback(Update update) {
         String callbackData = update.getCallbackQuery().getData();
         Long chatId = update.getCallbackQuery().getMessage().getChatId();
 
         if (callbackData.startsWith("section_")) {
-            String sectionId = callbackData.split("_")[1];
 
-            return sectionId;
+            return callbackData.split("_")[1];
         }
         return null;
     }
@@ -705,7 +773,7 @@ public class StudyBot extends TelegramLongPollingBot {
         SendMessage message = new SendMessage();
         message.setChatId(chatId.toString());
         message.setReplyMarkup(keyboard);
-        message.setText("Rr");
+        message.setText("Выберите действие: ");
         try {
             execute(message);
         } catch (TelegramApiException e) {

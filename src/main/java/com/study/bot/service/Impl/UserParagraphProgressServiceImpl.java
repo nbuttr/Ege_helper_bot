@@ -12,7 +12,9 @@ import jakarta.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -40,5 +42,10 @@ public class UserParagraphProgressServiceImpl implements UserParagraphProgressSe
                             return mapper.toDto(repository.save(updatedEntity));
                         })
                 .orElseThrow(NotFoundException::new);
+    }
+
+    @Override
+    public List<UserParagraphProgressDto> findAll() {
+        return repository.findAll().stream().map(mapper::toDto).collect(Collectors.toList());
     }
 }
