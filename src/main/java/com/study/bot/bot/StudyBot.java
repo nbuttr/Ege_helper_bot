@@ -151,7 +151,7 @@ public class StudyBot extends TelegramLongPollingBot {
                     userRegState.setStage(UserRegStage.ASK_ADMIN_PASSWORD);
                     userRegState.setRole(UserRoles.ADMIN);
                 } else if (text.equalsIgnoreCase("юзер")) {
-                    response.setText("Регистрация завершена. Добро пожаловать в пользовательскую панель!");
+                    response.setText("Регистрация завершена. Добро пожаловать в пользовательскую панель! \n Введите 'Получить список глав' для продолжения.");
                     userRegState.setRole(UserRoles.USER);
                     userRegState.setStage(UserRegStage.COMPLETE);
                     UserRegState userRegState1 = userRegStates.get(chatId);
@@ -174,7 +174,7 @@ public class StudyBot extends TelegramLongPollingBot {
                 if (userRegState.getRole().equals(UserRoles.ADMIN)) {
                     response.setText("Вы уже зарегистрированы как админ.");
                 } else {
-                    response.setText("Вы уже зарегистрированы как пользователь.");
+                    response.setText("Вы уже зарегистрированы как пользователь. \n Введите 'Получить список глав' для продолжения.");
                 }
             }
         }
@@ -316,22 +316,27 @@ public class StudyBot extends TelegramLongPollingBot {
             }
             case VIEW_IMAGES -> {
                 if(text.equalsIgnoreCase("тест")){
-                    response.setText("Отправляю тесты...");
+                    response.setText("Готовлю тесты... \n Введите любой текст для продолжения");
                     userState.setStage(UserStage.START_TEST);
                 }
 
             }
             default -> {
-                response.setText("Неизвестное состояние.");
+                response.setText("Неизвестная команда.");
                 userState.setStage(UserStage.NONE);
             }
         }
 
+            if(response.getText()==null){
+                response.setText("Что то пошло не так");
+                userState.setStage(UserStage.NONE);
+            }
             userStates.put(chatId, userState);
             try {
                 execute(response);
             } catch (TelegramApiException e) {
                 e.printStackTrace();
+                userState.setStage(UserStage.NONE);
             }
 
     }
@@ -377,10 +382,13 @@ public class StudyBot extends TelegramLongPollingBot {
                 }else if(text.equals("Получить доступ к журналу")){
                     adminState.setStage(AdminStage.GET_STUDENTS_PROGRESS);
                     response.setText("Вы хотите получить доступ к журналу?");
-                }else {
+                } else if (text.equals("Создать тест с выбором параграфа")) {
+                    adminState.setStage(AdminStage.GET_ALL_SECTIONS_TEST);
+                    response.setText("Выберите главу, для параграфа в которой хотите создать тест:");
+                } else {
                     adminState.setStage(AdminStage.NONE);
                     SendStartAdminMenu(chatId);
-                    response.setText("\n1. Создать главу \n2. Создать параграф \n3. Добавить изображения в параграф \n4. Создать тест \n5. Получить доступ к журналу");
+                    response.setText("\n1. Создать главу \n2. Создать параграф \n3. Добавить изображения в параграф \n4. Создать тест \n5. Создать тест с выбором параграфа \n6. Получить доступ к журналу");
                 }
             }
             case CREATE_PARAGRAPH -> {
@@ -483,6 +491,62 @@ public class StudyBot extends TelegramLongPollingBot {
                 } else {
                     response.setText("Глава с таким названием не найдена. Попробуйте снова.");
                     adminState.setStage(AdminStage.GET_ALL_SECTIONS);
+                }
+            }
+            case GET_ALL_SECTIONS_TEST -> {
+                List<SectionDto> sectionDtos = sectionService.findAll();
+                if(sectionDtos.isEmpty()){
+                    response.setText("Список глав пуст. Сначала создайте главу");
+                    adminState.setStage(AdminStage.NONE);
+                }else{
+                    StringBuilder sectionList = new StringBuilder("Список глав: \n");
+                    for(SectionDto sectionDto : sectionDtos){
+                        sectionList.append("- ").append(sectionDto.getSectionName()).append("\n");
+                    }
+                    response.setText(sectionList + "\nВведите название главы из списка: ");
+                    adminState.setStage(AdminStage.CHOOSE_SECTION_TEST);
+                }
+            }
+            case CHOOSE_SECTION_TEST -> {
+                String sectionName = update.getMessage().getText();
+                Optional<SectionDto> selectedSection = Optional.ofNullable(sectionService.findBySectionName(sectionName));
+
+                if (selectedSection.isPresent()) {
+                    adminState.setCurrentSectionId(selectedSection.get().getId());
+                    response.setText("Вы выбрали главу: " + sectionName + ". Введите 'да' для подтверждения выбора.");
+                    adminState.setStage(AdminStage.GET_ALL_PARAGRAPHS_BY_SECTION);
+                } else {
+                    response.setText("Глава с таким названием не найдена. Попробуйте снова.");
+                    adminState.setStage(AdminStage.GET_ALL_SECTIONS_TEST);
+                }
+            }
+            case GET_ALL_PARAGRAPHS_BY_SECTION -> {
+                List<ParagraphDto> paragraphDtos = paragraphService.findAllBySectionId(sectionService
+                                .getEntityById(adminState.getCurrentSectionId()));
+                if(paragraphDtos.isEmpty()){
+                    response.setText("Список параграфов пуст. Сначала создайте параграф.");
+                    adminState.setStage(AdminStage.NONE);
+                }else {
+                    StringBuilder sectionList = new StringBuilder("Список параграфов: \n");
+                    for (ParagraphDto paragraphDto : paragraphDtos) {
+                        sectionList.append("- ").append(paragraphDto.getParagraphName()).append("\n");
+                    }
+                    response.setText(sectionList + "\nВведите название параграфа из списка: ");
+                    adminState.setStage(AdminStage.CHOOSE_PARAGRAPH);
+                }
+
+            }
+            case CHOOSE_PARAGRAPH -> {
+                String paragraphName = update.getMessage().getText();
+                Optional<ParagraphDto> selectedParagraph = Optional.ofNullable(paragraphService.findByParagraphName(paragraphName));
+
+                if (selectedParagraph.isPresent()) {
+                    adminState.setCurrentParagraphId(selectedParagraph.get().getId());
+                    response.setText("Вы выбрали параграф: " + paragraphName + ". Теперь отправьте изображение с заданием.");
+                    adminState.setStage(AdminStage.ASK_TEST_IMAGE_URL);
+                } else {
+                    response.setText("Параграф с таким названием не найден. Попробуйте снова.");
+                    adminState.setStage(AdminStage.GET_ALL_SECTIONS_TEST);
                 }
             }
             case ASK_TEST_IMAGE_URL -> {
@@ -619,10 +683,13 @@ public class StudyBot extends TelegramLongPollingBot {
         KeyboardRow row4 = new KeyboardRow();
         row4.add("Создать тест");
 
+        KeyboardRow row6 = new KeyboardRow();
+        row6.add(" Создать тест с выбором параграфа");
+
         KeyboardRow row5 = new KeyboardRow();
         row5.add("Получить доступ к журналу");
 
-        keyboard.setKeyboard(List.of(row1, row2, row3, row4, row5));
+        keyboard.setKeyboard(List.of(row1, row2, row3, row4, row6, row5));
 
         sendMessageWithReplyKeyBoard(chatId, keyboard);
     }
