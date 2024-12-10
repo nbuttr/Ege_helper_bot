@@ -30,6 +30,8 @@ dependencies {
 	implementation("org.liquibase:liquibase-core:4.30.0")
 	implementation("org.postgresql:postgresql:42.7.3")
 	implementation("com.amazonaws:aws-java-sdk-s3:1.12.769")
+	implementation("com.azure:azure-ai-openai:+")
+	implementation("com.azure:azure-core-http-okhttp:+")
 
 
 	compileOnly("org.projectlombok:lombok:1.18.32")
