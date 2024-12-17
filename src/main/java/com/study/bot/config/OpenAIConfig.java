@@ -33,6 +33,10 @@ public class OpenAIConfig {
         OpenAIClientBuilder openAIbuilder =
                 new OpenAIClientBuilder().credential(new AzureKeyCredential(properties.getApiKey()));
 
+        if (properties.getCustomEndpointUrl() != null && !properties.getCustomEndpointUrl().isEmpty()) {
+            openAIbuilder.endpoint(properties.getCustomEndpointUrl());
+        }
+
         openAIbuilder.httpClient(okHttpAsyncHttpClientBuilder.build());
 
         return openAIbuilder.buildClient();

@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 public class OpenAIProperties {
 
     private String apiKey;
+    private String customEndpointUrl;
     private Proxy proxy = new Proxy();
 
     @Getter

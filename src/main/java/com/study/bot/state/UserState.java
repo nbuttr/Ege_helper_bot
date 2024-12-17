@@ -27,5 +27,7 @@ public class UserState {
     private int currIndex;
     private List<TestDto> tests = new ArrayList<>();
     private UserParagraphProgressDto userParagraphProgressDto;
+    private String userAnswerImageUrl;
+    private String userQuestionImageUrl;
 
 }

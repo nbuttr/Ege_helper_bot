@@ -52,4 +52,8 @@ public class Paragraph {
     @Column(name = "test")
     private List<Test> tests = new ArrayList<>();
 
+    @OneToMany(mappedBy = "paragraph", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @Column(name = "second_part_id")
+    private List<SecondPart> secondParts = new ArrayList<>();
+
 }

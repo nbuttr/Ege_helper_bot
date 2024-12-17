@@ -31,5 +31,6 @@ public class AdminState {
     private String testAnswer3;
     private String testAnswer4;
     private String correctAnswer;
+    private String secondPartUrl;
 
 }
