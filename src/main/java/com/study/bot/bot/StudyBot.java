@@ -1,8 +1,6 @@
 package com.study.bot.bot;
 
 import com.study.bot.dto.ImageToParagraphDto.ImageToParagraphDto;
-import com.study.bot.dto.assessment.ChatGptRequestDto;
-import com.study.bot.dto.assessment.ChatGptResponseDto;
 import com.study.bot.dto.paragraph.CreateParagraphDto;
 import com.study.bot.dto.paragraph.ParagraphDto;
 import com.study.bot.dto.secondPart.CreateSecondPartDto;
@@ -52,7 +50,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -257,7 +254,8 @@ public class StudyBot extends TelegramLongPollingBot {
                     sendParagraphList(chatId, userState.getCurrentSectionId());
                 } else {
                     userState.setStage(UserStage.NONE);
-                    response.setText("Действие отменено.");
+                    response.setText("Действие отменено." + "\nВведите любой текст для продолжения.");
+
                 }
             }
             case GET_PARAGRAPH -> {
@@ -360,7 +358,7 @@ public class StudyBot extends TelegramLongPollingBot {
                             .getChoices()
                             .getFirst()
                             .getMessage()
-                            .getContent());
+                            .getContent()+"\nДля продолжения введите 'да'.");
                     userState.setStage(UserStage.SELECT_SECTION);
                 }
             }

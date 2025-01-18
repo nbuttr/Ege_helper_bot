@@ -64,9 +64,6 @@ CREATE TABLE "user_paragraph_progress" (
 );
 
 
-ALTER TABLE "user"
-    ADD FOREIGN KEY(journal_id) REFERENCES "journal"(id)
-        ON UPDATE NO ACTION ON DELETE NO ACTION;
 ALTER TABLE "journal"
     ADD FOREIGN KEY("section_id") REFERENCES "section"("id")
         ON UPDATE NO ACTION ON DELETE NO ACTION;

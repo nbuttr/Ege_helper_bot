@@ -22,3 +22,16 @@ services:
       resources:
         limits:
           memory: 300m
+  telegram-bot:
+    container_name: telegram-bot
+    build:
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://use-bot-postgresql:5432/use-bot-db
+      - SPRING_DATASOURCE_USERNAME=bot-user
+      - SPRING_DATASOURCE_PASSWORD=bot-user-pass
+    ports:
+      - "8080:8080"
+    depends_on:
+      - use-bot-postgresql
